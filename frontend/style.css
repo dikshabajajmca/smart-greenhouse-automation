@@ -1,0 +1,197 @@
+/* =====================================
+   SMART GREENHOUSE - MAIN STYLES
+   ===================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7f5;
+    color: #1f2937;
+}
+
+
+/* =====================================
+   HEADER
+   ===================================== */
+
+.header {
+    padding: 20px;
+    text-align: center;
+    background: #1f2937;
+    color: white;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.header p {
+    margin: 8px 0 0;
+}
+
+
+/* =====================================
+   MAIN CONTAINER
+   ===================================== */
+
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+
+/* =====================================
+   PANELS
+   ===================================== */
+
+.panel {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.panel h2 {
+    margin-top: 0;
+}
+
+
+/* =====================================
+   IMPORTANT - BLOCKLY WORKSPACE
+   ===================================== */
+
+#blocklyDiv {
+    width: 100%;
+    height: 550px;
+    min-height: 550px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+
+/* =====================================
+   SENSOR CARDS
+   ===================================== */
+
+.sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.sensor-card {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    background: #fafafa;
+}
+
+.sensor-card h3 {
+    margin-top: 0;
+}
+
+.sensor-card p {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+
+/* =====================================
+   ACTUATORS
+   ===================================== */
+
+.actuator-section {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.status {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.status.off {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status.on {
+    background: #dcfce7;
+    color: #166534;
+}
+
+
+/* =====================================
+   BUTTONS
+   ===================================== */
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+}
+
+button {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    background: #2563eb;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+
+/* =====================================
+   OUTPUT
+   ===================================== */
+
+.output {
+    margin: 0 20px 20px;
+    background: #111827;
+    color: #d1fae5;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+pre {
+    white-space: pre-wrap;
+}
+
+
+/* =====================================
+   RESPONSIVE
+   ===================================== */
+
+@media (max-width: 900px) {
+
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .sensor-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #blocklyDiv {
+        height: 500px;
+    }
+}

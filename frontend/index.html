@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Greenhouse Automation</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Blockly Library -->
+    <!-- Blockly Library -->
+<script src="https://unpkg.com/blockly/blockly.min.js"></script>
+<script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>🌱 Smart Greenhouse Automation</h1>
+        <p>No-Code IoT Rule Engine</p>
+    </header>
+
+
+    <main class="container">
+
+        <!-- Blockly Section -->
+        <section class="panel">
+
+            <h2>Automation Logic</h2>
+
+            <div id="blocklyDiv"></div>
+
+        </section>
+
+
+        <!-- Greenhouse Dashboard -->
+        <section class="panel">
+
+            <h2>Greenhouse Simulation</h2>
+
+            <div class="sensor-grid">
+
+                <div class="sensor-card">
+                    <h3>Temperature</h3>
+                    <p id="temperature">-- °C</p>
+                </div>
+
+                <div class="sensor-card">
+                    <h3>Humidity</h3>
+                    <p id="humidity">-- %</p>
+                </div>
+
+                <div class="sensor-card">
+                    <h3>Soil Moisture</h3>
+                    <p id="soilMoisture">-- %</p>
+                </div>
+
+            </div>
+
+
+            <div class="actuator-section">
+
+                <div>
+                    <h3>Water Pump</h3>
+
+                    <span id="pumpStatus" class="status off">
+                        OFF
+                    </span>
+                </div>
+
+
+                <div>
+                    <h3>Ventilation Window</h3>
+
+                    <p id="windowAngle">0°</p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Buttons -->
+
+    <section class="controls">
+
+        <button id="compileBtn">
+            Compile Logic
+        </button>
+
+        <button id="validateBtn">
+            Validate
+        </button>
+
+        <button id="deployBtn">
+            Deploy Logic
+        </button>
+
+    </section>
+
+
+    <!-- Output -->
+
+    <section class="output">
+
+        <h2>System Output</h2>
+
+        <pre id="output">System ready...</pre>
+
+    </section>
+
+
+    <!-- JavaScript Files -->
+
+    <script src="blockly/blocks.js"></script>
+    <script src="blockly/generator.js"></script>
+
+    <script src="engine/ruleEngine.js"></script>
+    <script src="engine/validator.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
