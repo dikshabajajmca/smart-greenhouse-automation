@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "author": "Diksha Bajaj",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp1",
+      "top": 158.88,
+      "left": 35.62,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": 72.78,
+      "left": 294.18,
+      "attrs": {
+        "temperature": "32",
+        "humidity": "65"
+      }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "soil1",
+      "top": 263.18,
+      "left": 289.78,
+      "attrs": {
+        "value": "20"
+      }
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 421.22,
+      "left": 290.21,
+      "attrs": {
+        "i2cAddress": "0x3c"
+      }
+    },
+    {
+      "type": "wokwi-relay-module",
+      "id": "relay1",
+      "top": 255.08,
+      "left": 539.58,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 414.48,
+      "left": 543.38,
+      "attrs": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "resistor1",
+      "top": 468.88,
+      "left": 640.38,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo1",
+      "top": 60.88,
+      "left": 539.58,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [
+      "esp1:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp1:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "soil1:VCC",
+      "esp1:3V3",
+      "red",
+      []
+    ],
+    [
+      "soil1:GND",
+      "esp1:GND.1",
+      "black",
+      []
+    ],
+    [
+      "soil1:SIG",
+      "esp1:D34",
+      "orange",
+      []
+    ],
+    [
+      "oled1:VCC",
+      "esp1:3V3",
+      "red",
+      []
+    ],
+    [
+      "oled1:GND",
+      "esp1:GND.2",
+      "black",
+      []
+    ],
+    [
+      "oled1:SDA",
+      "esp1:21",
+      "blue",
+      []
+    ],
+    [
+      "oled1:SCL",
+      "esp1:22",
+      "purple",
+      []
+    ],
+    [
+      "relay1:VCC",
+      "esp1:5V",
+      "red",
+      []
+    ],
+    [
+      "relay1:GND",
+      "esp1:GND.1",
+      "black",
+      []
+    ],
+    [
+      "relay1:IN",
+      "esp1:D26",
+      "yellow",
+      []
+    ],
+    [
+      "servo1:V+",
+      "esp1:5V",
+      "red",
+      []
+    ],
+    [
+      "servo1:GND",
+      "esp1:GND.1",
+      "black",
+      []
+    ],
+    [
+      "servo1:PWM",
+      "esp1:D25",
+      "orange",
+      []
+    ],
+    [
+      "relay1:COM",
+      "esp1:5V",
+      "red",
+      []
+    ],
+    [
+      "relay1:NO",
+      "led1:A",
+      "green",
+      []
+    ],
+    [
+      "led1:C",
+      "resistor1:1",
+      "black",
+      []
+    ],
+    [
+      "resistor1:2",
+      "esp1:GND.1",
+      "black",
+      []
+    ],
+    [
+      "dht1:VCC",
+      "esp1:3V3",
+      "red",
+      []
+    ],
+    [
+      "dht1:GND",
+      "esp1:GND.1",
+      "black",
+      []
+    ],
+    [
+      "dht1:SDA",
+      "esp1:4",
+      "green",
+      []
+    ]
+  ],
+  "dependencies": {}
+}

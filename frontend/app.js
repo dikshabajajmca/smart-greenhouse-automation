@@ -4,7 +4,190 @@
 
 console.log("Smart Greenhouse App Started");
 
+// =====================================
+// DAY 5 - WEBSOCKET CONNECTION
+// =====================================
 
+const greenhouseSocket = new WebSocket(
+    "ws://localhost:3000"
+);
+window.greenhouseSocket = greenhouseSocket;
+
+greenhouseSocket.onopen = function () {
+
+    console.log(
+        "✅ Connected to Smart Greenhouse WebSocket Server"
+    );
+};
+
+greenhouseSocket.onmessage = function (event) {
+
+    try {
+
+        const data =
+            JSON.parse(event.data);
+
+        console.log(
+            "📡 WebSocket Message:",
+            data
+        );
+
+
+        // =================================
+        // TELEMETRY FROM WOKWI / SERVER
+        // =================================
+
+        if (data.type === "telemetry") {
+
+            // Temperature
+            if (
+                data.temperature !== undefined
+            ) {
+
+                sensorData.temperature =
+                    Number(
+                        data.temperature
+                    );
+            }
+
+
+            // Humidity
+            if (
+                data.humidity !== undefined
+            ) {
+
+                sensorData.humidity =
+                    Number(
+                        data.humidity
+                    );
+            }
+
+
+            // Soil Moisture
+            if (
+                data.soilMoisture !== undefined
+            ) {
+
+                sensorData.soilMoisture =
+                    Number(
+                        data.soilMoisture
+                    );
+            }
+
+
+            // Update dashboard
+            updateDashboard();
+
+
+            console.log(
+                "🌱 Live Telemetry Updated:",
+                sensorData
+            );
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Invalid WebSocket message:",
+            error
+        );
+    }
+};
+
+// =====================================
+// TEST TELEMETRY
+// =====================================
+
+function sendTestTelemetry() {
+
+    if (
+        greenhouseSocket.readyState !==
+        WebSocket.OPEN
+    ) {
+        console.log(
+            "❌ WebSocket is not connected"
+        );
+        return;
+    }
+
+    const telemetry = {
+
+        type: "telemetry",
+
+        temperature: 32,
+
+        humidity: 65,
+
+        soilMoisture: 25
+    };
+
+    greenhouseSocket.send(
+        JSON.stringify(telemetry)
+    );
+
+    console.log(
+        "📡 Test telemetry sent:",
+        telemetry
+    );
+}
+
+
+// =====================================
+// TEST TELEMETRY BUTTON
+// =====================================
+
+const testTelemetryBtn =
+    document.createElement("button");
+
+testTelemetryBtn.textContent =
+    "Send Test Telemetry";
+
+testTelemetryBtn.style.margin =
+    "10px";
+
+document.body.prepend(
+    testTelemetryBtn
+);
+
+testTelemetryBtn.addEventListener(
+    "click",
+    function () {
+
+        if (
+            greenhouseSocket.readyState !==
+            WebSocket.OPEN
+        ) {
+
+            console.log(
+                "❌ WebSocket is not connected"
+            );
+
+            return;
+        }
+
+        const telemetry = {
+
+            type: "telemetry",
+
+            temperature: 32,
+
+            humidity: 65,
+
+            soilMoisture: 25
+        };
+
+        greenhouseSocket.send(
+            JSON.stringify(telemetry)
+        );
+
+        console.log(
+            "📡 Test telemetry sent:",
+            telemetry
+        );
+    }
+);
 // =====================================
 // SENSOR DATA
 // =====================================
