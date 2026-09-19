@@ -1,0 +1,36 @@
+{
+  "name": "Hot & Dry Weather Profile",
+  "rules": [
+    {
+      "conditions": [
+        {
+          "sensor": "temperature",
+          "operator": ">",
+          "value": 30
+        },
+        {
+          "sensor": "soilMoisture",
+          "operator": "<",
+          "value": 30
+        }
+      ],
+      "action": {
+        "type": "pump",
+        "value": true
+      }
+    },
+    {
+      "conditions": [
+        {
+          "sensor": "temperature",
+          "operator": ">",
+          "value": 30
+        }
+      ],
+      "action": {
+        "type": "ventilation",
+        "angle": 90
+      }
+    }
+  ]
+}
