@@ -5,27 +5,66 @@
 console.log("Smart Greenhouse App Started");
 
 // =====================================
-// DAY 5 - WEBSOCKET CONNECTION
+// DAY 5 + DAY 6 - WEBSOCKET & SAFETY
 // =====================================
 
 const greenhouseSocket = new WebSocket(
     "ws://localhost:3000"
 );
+
 window.greenhouseSocket = greenhouseSocket;
+
+
+// =====================================
+// SENSOR DATA
+// =====================================
+
+let sensorData = {
+    temperature: 32,
+    humidity: 65,
+    soilMoisture: 25
+};
+
+
+// =====================================
+// SYSTEM STATUS
+// =====================================
+
+let sensorFailureTestMode = false;
+
+let systemStatus = {
+    wokwi: "CONNECTED",
+    sensorFailure: false,
+    safeMode: false,
+    lastTelemetry: Date.now()
+};
+
+
+// =====================================
+// WEBSOCKET OPEN
+// =====================================
 
 greenhouseSocket.onopen = function () {
 
     console.log(
         "✅ Connected to Smart Greenhouse WebSocket Server"
     );
+
+    systemStatus.wokwi = "CONNECTED";
+
+    updateSystemStatus();
 };
+
+
+// =====================================
+// WEBSOCKET MESSAGE
+// =====================================
 
 greenhouseSocket.onmessage = function (event) {
 
     try {
 
-        const data =
-            JSON.parse(event.data);
+        const data = JSON.parse(event.data);
 
         console.log(
             "📡 WebSocket Message:",
@@ -34,49 +73,176 @@ greenhouseSocket.onmessage = function (event) {
 
 
         // =================================
-        // TELEMETRY FROM WOKWI / SERVER
+        // CONNECTION MESSAGE
+        // =================================
+
+        if (data.type === "connection") {
+
+            systemStatus.wokwi = "CONNECTED";
+
+            updateSystemStatus();
+
+            return;
+        }
+
+
+        // =================================
+        // TELEMETRY
         // =================================
 
         if (data.type === "telemetry") {
+            if (sensorFailureTestMode) {
 
-            // Temperature
+    sensorFailureTestMode = true;
+
+sensorData.temperature = null;
+
+systemStatus.sensorFailure = true;
+systemStatus.safeMode = true;
+systemStatus.wokwi = "CONNECTED";
+
+updateDashboard();
+updateSystemStatus();
+
+output.textContent =
+    "⚠️ Sensor Failure Simulated\n\n" +
+    "Temperature sensor is unavailable.\n" +
+    "Rule Engine will safely reject temperature-based rules.";
+
+console.log(
+    "Sensor Failure Test Mode Enabled"
+);
+    updateDashboard();
+    updateSystemStatus();
+
+    console.warn(
+        "⚠️ Sensor Failure Test Mode Active"
+    );
+
+    return;
+}
+
+            systemStatus.lastTelemetry =
+                Date.now();
+
+            systemStatus.wokwi =
+                "CONNECTED";
+
+
+            let sensorError = false;
+
+
+            // =================================
+            // TEMPERATURE
+            // =================================
+
             if (
-                data.temperature !== undefined
+                data.temperature !== undefined &&
+                data.temperature !== null &&
+                Number.isFinite(
+                    Number(data.temperature)
+                )
             ) {
 
                 sensorData.temperature =
                     Number(
                         data.temperature
                     );
+
+            } else {
+
+                sensorData.temperature = null;
+
+                sensorError = true;
+
+                console.warn(
+                    "❌ Temperature sensor unavailable"
+                );
             }
 
 
-            // Humidity
+            // =================================
+            // HUMIDITY
+            // =================================
+
             if (
-                data.humidity !== undefined
+                data.humidity !== undefined &&
+                data.humidity !== null &&
+                Number.isFinite(
+                    Number(data.humidity)
+                )
             ) {
 
                 sensorData.humidity =
                     Number(
                         data.humidity
                     );
+
+            } else {
+
+                sensorData.humidity = null;
+
+                sensorError = true;
+
+                console.warn(
+                    "❌ Humidity sensor unavailable"
+                );
             }
 
 
-            // Soil Moisture
+            // =================================
+            // SOIL MOISTURE
+            // =================================
+
             if (
-                data.soilMoisture !== undefined
+                data.soilMoisture !== undefined &&
+                data.soilMoisture !== null &&
+                Number.isFinite(
+                    Number(data.soilMoisture)
+                )
             ) {
 
                 sensorData.soilMoisture =
                     Number(
                         data.soilMoisture
                     );
+
+            } else {
+
+                sensorData.soilMoisture = null;
+
+                sensorError = true;
+
+                console.warn(
+                    "❌ Soil moisture sensor unavailable"
+                );
             }
 
 
-            // Update dashboard
+            // =================================
+            // SENSOR SAFETY
+            // =================================
+
+            if (sensorError) {
+
+                systemStatus.sensorFailure = true;
+                systemStatus.safeMode = true;
+
+                console.warn(
+                    "⚠️ Sensor failure detected"
+                );
+
+            } else {
+
+                systemStatus.sensorFailure = false;
+
+                systemStatus.safeMode = false;
+            }
+
+
             updateDashboard();
+
+            updateSystemStatus();
 
 
             console.log(
@@ -90,11 +256,47 @@ greenhouseSocket.onmessage = function (event) {
     catch (error) {
 
         console.error(
-            "Invalid WebSocket message:",
+            "❌ Invalid WebSocket message:",
             error
         );
     }
 };
+
+
+// =====================================
+// WEBSOCKET ERROR
+// =====================================
+
+greenhouseSocket.onerror = function (error) {
+
+    console.error(
+        "❌ WebSocket error:",
+        error
+    );
+
+    systemStatus.wokwi = "OFFLINE";
+    systemStatus.safeMode = true;
+
+    updateSystemStatus();
+};
+
+
+// =====================================
+// WEBSOCKET CLOSED
+// =====================================
+
+greenhouseSocket.onclose = function () {
+
+    console.warn(
+        "🔴 WebSocket disconnected"
+    );
+
+    systemStatus.wokwi = "OFFLINE";
+    systemStatus.safeMode = true;
+
+    updateSystemStatus();
+};
+
 
 // =====================================
 // TEST TELEMETRY
@@ -106,11 +308,14 @@ function sendTestTelemetry() {
         greenhouseSocket.readyState !==
         WebSocket.OPEN
     ) {
+
         console.log(
             "❌ WebSocket is not connected"
         );
+
         return;
     }
+
 
     const telemetry = {
 
@@ -123,9 +328,11 @@ function sendTestTelemetry() {
         soilMoisture: 25
     };
 
+
     greenhouseSocket.send(
         JSON.stringify(telemetry)
     );
+
 
     console.log(
         "📡 Test telemetry sent:",
@@ -147,61 +354,153 @@ testTelemetryBtn.textContent =
 testTelemetryBtn.style.margin =
     "10px";
 
+
 document.body.prepend(
     testTelemetryBtn
 );
+
 
 testTelemetryBtn.addEventListener(
     "click",
     function () {
 
-        if (
-            greenhouseSocket.readyState !==
-            WebSocket.OPEN
-        ) {
+        sendTestTelemetry();
 
-            console.log(
-                "❌ WebSocket is not connected"
-            );
-
-            return;
-        }
-
-        const telemetry = {
-
-            type: "telemetry",
-
-            temperature: 32,
-
-            humidity: 65,
-
-            soilMoisture: 25
-        };
-
-        greenhouseSocket.send(
-            JSON.stringify(telemetry)
-        );
-
-        console.log(
-            "📡 Test telemetry sent:",
-            telemetry
-        );
     }
 );
-// =====================================
-// SENSOR DATA
-// =====================================
-
-let sensorData = {
-    temperature: 32,
-    humidity: 65,
-    soilMoisture: 25
-};
 
 
 // =====================================
-// TOOLBOX
+// SYSTEM STATUS UI
 // =====================================
+
+function updateSystemStatus() {
+
+    let statusBox =
+        document.getElementById(
+            "systemStatusBox"
+        );
+
+
+    if (!statusBox) {
+
+        statusBox =
+            document.createElement("div");
+
+        statusBox.id =
+            "systemStatusBox";
+
+        statusBox.style.margin =
+            "10px";
+
+        statusBox.style.padding =
+            "15px";
+
+        statusBox.style.border =
+            "1px solid #ccc";
+
+        statusBox.style.borderRadius =
+            "10px";
+
+        statusBox.style.fontFamily =
+            "Arial";
+
+        document.body.prepend(
+            statusBox
+        );
+    }
+
+
+    const wokwiStatus =
+        systemStatus.wokwi === "CONNECTED"
+            ? "🟢 Connected"
+            : "🔴 Offline";
+
+
+    const sensorStatus =
+        systemStatus.sensorFailure
+            ? "🔴 Sensor Error"
+            : "🟢 Normal";
+
+
+    const safeModeStatus =
+        systemStatus.safeMode
+            ? "🟠 ACTIVE"
+            : "🟢 OFF";
+
+
+    statusBox.innerHTML = `
+        <h3>🌱 SYSTEM STATUS</h3>
+
+        <p>
+            Wokwi:
+            ${wokwiStatus}
+        </p>
+
+        <p>
+            Sensors:
+            ${sensorStatus}
+        </p>
+
+        <p>
+            Safe Mode:
+            ${safeModeStatus}
+        </p>
+
+        <p>
+            Blockly:
+            🟢 Ready
+        </p>
+
+        <p>
+            Rule Engine:
+            ${
+                systemStatus.safeMode
+                ? "🟠 Paused"
+                : "🟢 Running"
+            }
+        </p>
+    `;
+}
+
+
+// =====================================
+// TELEMETRY TIMEOUT
+// =====================================
+
+setInterval(
+    function () {
+
+        const elapsed =
+            Date.now() -
+            systemStatus.lastTelemetry;
+
+
+        // 5 seconds without telemetry
+        if (elapsed > 5000) {
+
+            systemStatus.wokwi =
+                "OFFLINE";
+
+            systemStatus.safeMode =
+                true;
+
+
+            console.warn(
+                "⚠️ Simulation disconnected."
+            );
+
+            console.warn(
+                "⚠️ Actuation paused."
+            );
+
+
+            updateSystemStatus();
+        }
+
+    },
+    1000
+);
 
 const toolbox = {
     kind: "flyoutToolbox",
@@ -298,7 +597,11 @@ updateDashboard();
 
 function createSensorTestControls() {
 
-    if (document.getElementById("sensorTestControls")) {
+    if (
+        document.getElementById(
+            "sensorTestControls"
+        )
+    ) {
         return;
     }
 
@@ -324,6 +627,7 @@ function createSensorTestControls() {
     const output =
         document.getElementById("output");
 
+
     if (
         output &&
         output.parentElement
@@ -342,17 +646,33 @@ function createSensorTestControls() {
     }
 
 
-    // SENSOR FAILURE
+    // =====================================
+    // SENSOR FAILURE TEST
+    // =====================================
+
     document
         .getElementById("sensorFailureBtn")
         .addEventListener(
             "click",
             function () {
 
+                sensorFailureTestMode =
+                    true;
+
                 sensorData.temperature =
                     null;
 
+                systemStatus.sensorFailure =
+                    true;
+
+                systemStatus.safeMode =
+                    true;
+
+                systemStatus.wokwi =
+                    "CONNECTED";
+
                 updateDashboard();
+                updateSystemStatus();
 
                 output.textContent =
                     "⚠️ Sensor Failure Simulated\n\n" +
@@ -360,19 +680,24 @@ function createSensorTestControls() {
                     "Rule Engine will safely reject temperature-based rules.";
 
                 console.log(
-                    "Sensor Failure Simulated:",
-                    sensorData
+                    "Sensor Failure Test Mode Enabled"
                 );
             }
         );
 
 
+    // =====================================
     // RESET SENSOR
+    // =====================================
+
     document
         .getElementById("resetSensorBtn")
         .addEventListener(
             "click",
             function () {
+
+                sensorFailureTestMode =
+                    false;
 
                 sensorData = {
                     temperature: 32,
@@ -380,7 +705,20 @@ function createSensorTestControls() {
                     soilMoisture: 25
                 };
 
+                systemStatus.sensorFailure =
+                    false;
+
+                systemStatus.safeMode =
+                    false;
+
+                systemStatus.wokwi =
+                    "CONNECTED";
+
+                systemStatus.lastTelemetry =
+                    Date.now();
+
                 updateDashboard();
+                updateSystemStatus();
 
                 output.textContent =
                     "✅ Sensors Reset\n\n" +
@@ -397,6 +735,11 @@ function createSensorTestControls() {
             }
         );
 }
+
+
+// =====================================
+// CREATE CONTROLS
+// =====================================
 
 createSensorTestControls();
 
@@ -568,9 +911,28 @@ document
 // EXECUTE DASHBOARD ACTION
 // =====================================
 
+// =====================================
+// EXECUTE DASHBOARD ACTION
+// =====================================
+
 function executeDashboardAction(action) {
 
     if (!action) {
+        return;
+    }
+
+
+    // =================================
+    // SAFE MODE
+    // =================================
+
+    if (systemStatus.safeMode) {
+
+        console.warn(
+            "⚠️ Safe Mode active - action blocked:",
+            action
+        );
+
         return;
     }
 
@@ -587,6 +949,11 @@ function executeDashboardAction(action) {
             );
 
 
+        if (!pumpStatus) {
+            return;
+        }
+
+
         if (action.value === true) {
 
             pumpStatus.textContent =
@@ -600,9 +967,7 @@ function executeDashboardAction(action) {
                 "on"
             );
 
-        }
-
-        else {
+        } else {
 
             pumpStatus.textContent =
                 "OFF";
@@ -619,10 +984,12 @@ function executeDashboardAction(action) {
 
 
     // =================================
-    // VENTILATION WINDOW
+    // VENTILATION
     // =================================
 
-    if (action.type === "ventilation") {
+    if (
+        action.type === "ventilation"
+    ) {
 
         let angle =
             Number(
@@ -630,23 +997,40 @@ function executeDashboardAction(action) {
             );
 
 
-        // Safety limit: 0–90 degrees
+        if (!Number.isFinite(angle)) {
 
-        angle = Math.max(
-            0,
-            Math.min(
-                90,
-                angle
-            )
-        );
+            console.warn(
+                "❌ Invalid ventilation angle"
+            );
+
+            return;
+        }
 
 
-        document.getElementById(
-            "windowAngle"
-        ).textContent =
-            angle + "°";
+        // Safety limit
+        if (angle < 0) {
+            angle = 0;
+        }
+
+        if (angle > 90) {
+            angle = 90;
+        }
+
+
+        const windowAngle =
+            document.getElementById(
+                "windowAngle"
+            );
+
+
+        if (windowAngle) {
+
+            windowAngle.textContent =
+                angle + "°";
+        }
     }
 }
+
 
 
 // =====================================
@@ -654,6 +1038,15 @@ function executeDashboardAction(action) {
 // =====================================
 
 function runRuleEngine(ruleData) {
+
+        if (systemStatus.safeMode) {
+
+        console.warn(
+            "⚠️ Safe Mode active - Rule Engine skipped"
+        );
+
+        return [];
+    }
 
     const executedActions = [];
 

@@ -1,5 +1,6 @@
 // =====================================
 // SMART GREENHOUSE VALIDATOR
+// DAY 6 - VALIDATION & SAFETY
 // =====================================
 
 
@@ -35,6 +36,46 @@ const allowedOperators = [
 
 
 // =====================================
+// NUMBER CHECK
+// =====================================
+
+function isValidNumber(value) {
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        return false;
+    }
+
+    const numberValue = Number(value);
+
+    return Number.isFinite(numberValue);
+}
+
+
+// =====================================
+// NORMALIZE OPERATOR
+// =====================================
+
+function normalizeOperator(operator) {
+
+    const operatorMap = {
+
+        GT: ">",
+        LT: "<",
+        GTE: ">=",
+        LTE: "<=",
+        EQ: "==",
+        NEQ: "!="
+    };
+
+    return operatorMap[operator] || operator;
+}
+
+
+// =====================================
 // VALIDATE SINGLE CONDITION
 // =====================================
 
@@ -46,13 +87,22 @@ function validateCondition(condition) {
 
         return {
             valid: false,
-            errors: ["Condition is missing"]
+            errors: [
+                "Condition is missing"
+            ]
         };
     }
 
 
-    // Sensor
-    if (!allowedSensors.includes(condition.sensor)) {
+    // =================================
+    // SENSOR
+    // =================================
+
+    if (
+        !allowedSensors.includes(
+            condition.sensor
+        )
+    ) {
 
         errors.push(
             `Invalid sensor: ${condition.sensor}`
@@ -60,8 +110,15 @@ function validateCondition(condition) {
     }
 
 
-    // Operator
-    if (!allowedOperators.includes(condition.operator)) {
+    // =================================
+    // OPERATOR
+    // =================================
+
+    if (
+        !allowedOperators.includes(
+            condition.operator
+        )
+    ) {
 
         errors.push(
             `Invalid operator: ${condition.operator}`
@@ -69,15 +126,14 @@ function validateCondition(condition) {
     }
 
 
-    // Value
-    if (
-        condition.value === undefined ||
-        condition.value === null ||
-        Number.isNaN(Number(condition.value))
-    ) {
+    // =================================
+    // VALUE
+    // =================================
+
+    if (!isValidNumber(condition.value)) {
 
         errors.push(
-            "Condition value must be a number"
+            "Condition value must be a valid number"
         );
     }
 
@@ -101,18 +157,22 @@ function validateAction(action) {
 
         return {
             valid: false,
-            errors: ["Action is missing"]
+            errors: [
+                "Action is missing"
+            ]
         };
     }
 
 
-    // ================================
+    // =================================
     // WATER PUMP
-    // ================================
+    // =================================
 
     if (action.type === "pump") {
 
-        if (typeof action.value !== "boolean") {
+        if (
+            typeof action.value !== "boolean"
+        ) {
 
             errors.push(
                 "Pump value must be true or false"
@@ -121,15 +181,19 @@ function validateAction(action) {
     }
 
 
-    // ================================
+    // =================================
     // VENTILATION
-    // ================================
+    // =================================
 
-    else if (action.type === "ventilation") {
+    else if (
+        action.type === "ventilation"
+    ) {
 
-        const angle = Number(action.angle);
+        const angle = Number(
+            action.angle
+        );
 
-        if (Number.isNaN(angle)) {
+        if (!Number.isFinite(angle)) {
 
             errors.push(
                 "Ventilation angle must be a number"
@@ -147,9 +211,9 @@ function validateAction(action) {
     }
 
 
-    // ================================
+    // =================================
     // UNKNOWN ACTION
-    // ================================
+    // =================================
 
     else {
 
@@ -167,6 +231,152 @@ function validateAction(action) {
 
 
 // =====================================
+// GET CONDITION SIGNATURE
+// =====================================
+
+function getConditionSignature(conditions) {
+
+    if (!conditions) {
+        return "";
+    }
+
+
+    // =================================
+    // ARRAY FORMAT
+    // =================================
+
+    if (Array.isArray(conditions)) {
+
+        const normalizedConditions =
+            conditions.map(
+                function (condition) {
+
+                    return {
+                        sensor: condition.sensor,
+                        operator: normalizeOperator(
+                            condition.operator
+                        ),
+                        value: Number(
+                            condition.value
+                        )
+                    };
+                }
+            );
+
+        return JSON.stringify({
+            type: "AND",
+            conditions: normalizedConditions
+        });
+    }
+
+
+    // =================================
+    // SINGLE CONDITION
+    // =================================
+
+    if (
+        conditions.type === "condition"
+    ) {
+
+        return JSON.stringify({
+            type: "condition",
+            sensor: conditions.sensor,
+            operator: normalizeOperator(
+                conditions.operator
+            ),
+            value: Number(
+                conditions.value
+            )
+        });
+    }
+
+
+    // =================================
+    // AND / OR GROUP
+    // =================================
+
+    if (
+        conditions.type === "AND" ||
+        conditions.type === "OR"
+    ) {
+
+        const normalizedConditions =
+            Array.isArray(
+                conditions.conditions
+            )
+                ? conditions.conditions.map(
+                    function (condition) {
+
+                        return {
+                            sensor:
+                                condition.sensor,
+
+                            operator:
+                                normalizeOperator(
+                                    condition.operator
+                                ),
+
+                            value:
+                                Number(
+                                    condition.value
+                                )
+                        };
+
+                    }
+                )
+                : [];
+
+        return JSON.stringify({
+            type: conditions.type,
+            conditions: normalizedConditions
+        });
+    }
+
+
+    return "";
+}
+
+
+// =====================================
+// GET ACTION SIGNATURE
+// =====================================
+
+function getActionSignature(action) {
+
+    if (!action) {
+        return "";
+    }
+
+
+    if (action.type === "pump") {
+
+        return JSON.stringify({
+            type: "pump",
+            value: Boolean(
+                action.value
+            )
+        });
+    }
+
+
+    if (
+        action.type === "ventilation"
+    ) {
+
+        return JSON.stringify({
+            type: "ventilation",
+            angle: Number(
+                action.angle
+            )
+        });
+    }
+
+
+    return "";
+}
+
+
+// =====================================
 // VALIDATE ONE RULE
 // =====================================
 
@@ -178,7 +388,9 @@ function validateRule(rule) {
 
         return {
             valid: false,
-            errors: ["Rule is missing"]
+            errors: [
+                "Rule is missing"
+            ]
         };
     }
 
@@ -193,11 +405,19 @@ function validateRule(rule) {
             "Rule must contain at least one condition"
         );
 
-    } else if (Array.isArray(rule.conditions)) {
+    } else if (
+        Array.isArray(
+            rule.conditions
+        )
+    ) {
 
+        // =================================
         // OLD / AND ARRAY FORMAT
+        // =================================
 
-        if (rule.conditions.length === 0) {
+        if (
+            rule.conditions.length === 0
+        ) {
 
             errors.push(
                 "Rule must contain at least one condition"
@@ -206,10 +426,15 @@ function validateRule(rule) {
         } else {
 
             rule.conditions.forEach(
-                function (condition, index) {
+                function (
+                    condition,
+                    index
+                ) {
 
                     const result =
-                        validateCondition(condition);
+                        validateCondition(
+                            condition
+                        );
 
                     if (!result.valid) {
 
@@ -223,6 +448,7 @@ function validateRule(rule) {
                             }
                         );
                     }
+
                 }
             );
         }
@@ -272,7 +498,9 @@ function validateRule(rule) {
             );
 
         } else if (
-            !Array.isArray(group.conditions) ||
+            !Array.isArray(
+                group.conditions
+            ) ||
             group.conditions.length === 0
         ) {
 
@@ -283,7 +511,10 @@ function validateRule(rule) {
         } else {
 
             group.conditions.forEach(
-                function (condition, index) {
+                function (
+                    condition,
+                    index
+                ) {
 
                     const result =
                         validateCondition(
@@ -302,6 +533,7 @@ function validateRule(rule) {
                             }
                         );
                     }
+
                 }
             );
         }
@@ -337,6 +569,160 @@ function validateRule(rule) {
 
 
 // =====================================
+// DETECT CONFLICTING RULES
+// =====================================
+
+function detectConflictingRules(rules) {
+
+    const errors = [];
+
+    for (
+        let i = 0;
+        i < rules.length;
+        i++
+    ) {
+
+        for (
+            let j = i + 1;
+            j < rules.length;
+            j++
+        ) {
+
+            const ruleA = rules[i];
+            const ruleB = rules[j];
+
+            const conditionA =
+                getConditionSignature(
+                    ruleA.conditions
+                );
+
+            const conditionB =
+                getConditionSignature(
+                    ruleB.conditions
+                );
+
+
+            // Different conditions
+            if (
+                conditionA !== conditionB
+            ) {
+                continue;
+            }
+
+
+            // =================================
+            // PUMP CONFLICT
+            // =================================
+
+            if (
+                ruleA.action &&
+                ruleB.action &&
+                ruleA.action.type === "pump" &&
+                ruleB.action.type === "pump"
+            ) {
+
+                if (
+                    ruleA.action.value !==
+                    ruleB.action.value
+                ) {
+
+                    errors.push(
+                        `Conflicting Rules: Rule ${i + 1} and Rule ${j + 1} configure the pump in opposite states for the same condition`
+                    );
+                }
+            }
+
+
+            // =================================
+            // VENTILATION CONFLICT
+            // =================================
+
+            if (
+                ruleA.action &&
+                ruleB.action &&
+                ruleA.action.type ===
+                    "ventilation" &&
+                ruleB.action.type ===
+                    "ventilation"
+            ) {
+
+                if (
+                    Number(
+                        ruleA.action.angle
+                    ) !==
+                    Number(
+                        ruleB.action.angle
+                    )
+                ) {
+
+                    errors.push(
+                        `Conflicting Rules: Rule ${i + 1} and Rule ${j + 1} set different ventilation angles for the same condition`
+                    );
+                }
+            }
+        }
+    }
+
+
+    return errors;
+}
+
+
+// =====================================
+// DETECT DUPLICATE RULES
+// =====================================
+
+function detectDuplicateRules(rules) {
+
+    const errors = [];
+    const seen = new Map();
+
+    rules.forEach(
+        function (rule, index) {
+
+            const conditionSignature =
+                getConditionSignature(
+                    rule.conditions
+                );
+
+            const actionSignature =
+                getActionSignature(
+                    rule.action
+                );
+
+            const signature =
+                conditionSignature +
+                "|" +
+                actionSignature;
+
+
+            if (
+                seen.has(signature)
+            ) {
+
+                const previousIndex =
+                    seen.get(signature);
+
+                errors.push(
+                    `Duplicate Rule: Rule ${previousIndex + 1} and Rule ${index + 1} are identical`
+                );
+
+            } else {
+
+                seen.set(
+                    signature,
+                    index
+                );
+            }
+        }
+    );
+
+
+    return errors;
+}
+
+
+// =====================================
 // VALIDATE ALL RULES
 // =====================================
 
@@ -348,25 +734,38 @@ function validateRules(ruleData) {
 
         return {
             valid: false,
-            errors: ["Rule data is missing"]
+            errors: [
+                "Rule data is missing"
+            ]
         };
     }
 
 
     if (
-        !Array.isArray(ruleData.rules) ||
+        !Array.isArray(
+            ruleData.rules
+        ) ||
         ruleData.rules.length === 0
     ) {
 
         return {
             valid: false,
-            errors: ["No rules found"]
+            errors: [
+                "No rules found"
+            ]
         };
     }
 
 
+    // =================================
+    // VALIDATE EACH RULE
+    // =================================
+
     ruleData.rules.forEach(
-        function (rule, index) {
+        function (
+            rule,
+            index
+        ) {
 
             const result =
                 validateRule(rule);
@@ -384,6 +783,34 @@ function validateRules(ruleData) {
                 );
             }
         }
+    );
+
+
+    // =================================
+    // CONFLICT CHECK
+    // =================================
+
+    const conflictErrors =
+        detectConflictingRules(
+            ruleData.rules
+        );
+
+    errors.push(
+        ...conflictErrors
+    );
+
+
+    // =================================
+    // DUPLICATE CHECK
+    // =================================
+
+    const duplicateErrors =
+        detectDuplicateRules(
+            ruleData.rules
+        );
+
+    errors.push(
+        ...duplicateErrors
     );
 
 
